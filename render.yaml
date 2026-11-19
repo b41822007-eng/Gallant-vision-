@@ -1,0 +1,31 @@
+services:
+    - type: web
+    name: gallant-vision-backend
+    env: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    rootDir: backend
+    envVars:
+            - key: NODE_ENV
+        value: production
+            - key: JWT_SECRET
+        generateValue: true
+            - key: MPESA_CONSUMER_KEY
+        sync: false
+            - key: MPESA_CONSUMER_SECRET
+        sync: false
+            - key: MPESA_PASSKEY
+        sync: false
+            - key: MPESA_SHORTCODE
+        sync: false
+    healthCheckPath: /health
+    - type: web
+    name: gallant-vision-frontend
+    env: static
+    plan: free
+    buildCommand: echo "Static"
+    staticPublishPath: .
+    envVars:
+            - key: VITE_APP_NAME
+        value: Gallant Vision
