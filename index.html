@@ -29,21 +29,57 @@ body{background:#f0f2f5}
 .item:last-child{border:none}
 .badge{background:#dcfce7;color:#166534;padding:4px 10px;border-radius:20px;font-size:11px}
 .badge.yellow{background:#fef9c3;color:#854d0e}
-button{width:100%;background:#14437A;color:white;border:none;padding:14px;border-radius:12px;font-size:15px;font-weight:bold;margin-top:4px}
+button{width:100%;background:#14437A;color:white;border:none;padding:14px;border-radius:12px;font-size:15px;font-weight:bold;margin-top:4px;cursor:pointer}
 button.gold{background:#FFD700;color:#0f2a3d}
+button.outline{background:white;color:#14437A;border:2px solid #14437A}
 .bottom{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;text-align:center;font-size:11px;color:#666}
 .bottom div{background:white;padding:12px;border-radius:12px}
+input,select{width:100%;padding:13px;margin:7px 0;border:1px solid #ddd;border-radius:12px;font-size:15px}
+.auth-box{background:white;padding:20px;border-radius:16px;margin:16px}
+.auth-box h2{text-align:center;color:#0f2a3d}
+.auth-box p{font-size:13px;color:#666;text-align:center;margin:6px 0 12px}
+.tabs{display:flex;gap:8px;margin-bottom:10px}
+.tabs button{flex:1}
+.tabs button.active{background:#FFD700;color:#0f2a3d}
+#msg{text-align:center;font-size:13px;color:#dc2626;margin-top:8px}
 </style>
 </head>
 <body>
+
+<!-- LOGIN / SIGN UP -->
+<div id="authPage" style="display:none">
+  <div style="background:#0f2a3d;padding:30px 16px;text-align:center;color:white">
+    <h1 style="color:#FFD700;font-size:28px">🌟 GALLANT VISION</h1>
+    <p style="opacity:.8;font-size:13px">Learn. Post. Grow. — Form 5 & 6</p>
+  </div>
+  <div class="auth-box">
+    <h2 id="authTitle">Karibu Tena</h2>
+    <p>Ingia kuona Dashboard yako</p>
+    <div class="tabs">
+      <button id="btnLogin" class="active" onclick="switchMode(true)">Login</button>
+      <button id="btnSignup" onclick="switchMode(false)">Sign Up</button>
+    </div>
+    <input id="nameInput" placeholder="Jina Kamili" style="display:none">
+    <input id="email" placeholder="Email" type="email">
+    <input id="password" placeholder="Password (angalau 6)" type="password">
+    <select id="formSelect" style="display:none"><option>Form 5</option><option>Form 6</option><option>Teacher</option></select>
+    <button id="authBtn" onclick="doAuth()">Login</button>
+    <p id="msg"></p>
+    <p style="font-size:11px">Kwa kuendelea unakubali Privacy Policy. Umri 13+.</p>
+  </div>
+</div>
+
+<!-- DASHBOARD -->
+<div id="dashPage" style="display:none">
 <div class="header">
 <div><h1>🌟 GALLANT VISION</h1><p>Dashboard • Form 5 & 6</p></div>
-<div class="avatar">GV</div>
+<div class="avatar" id="avatarLetter">GV</div>
 </div>
 
 <div class="wrap">
 <div class="welcome">
-<h2>Karibu Tena, Boss! 👋</h2>
+<h2 id="welcomeText">Karibu Tena, Boss! 👋</h2>
+<p id="userEmail"></p>
 <p>Leo ni Ijumaa • Una vitabu 12 vipya vya kusoma</p>
 </div>
 
@@ -70,7 +106,8 @@ button.gold{background:#FFD700;color:#0f2a3d}
 </div>
 
 <button>📚 Ona Vitabu Vyote</button>
-<button class="gold" style="margin-top:10px">💰 Lipa Na M-Pesa</button>
+<button class="gold" style="margin-top:10px" onclick="alert('Lipa na M-Pesa - Weka namba 0765123456')">💰 Lipa Na M-Pesa</button>
+<button class="outline" onclick="doLogout()">🚪 Logout</button>
 
 <div style="height:14px"></div>
 <div class="bottom">
@@ -80,5 +117,58 @@ button.gold{background:#FFD700;color:#0f2a3d}
 </div>
 <p style="text-align:center;color:#999;font-size:12px;margin-top:14px">Gallant Vision © 2026 • Mwanza, Tanzania</p>
 </div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCyKq9sXi-JDU6jIeZd_AVQO4by1MAHUj0",
+  authDomain: "gallant-vision-29c37.firebaseapp.com",
+  projectId: "gallant-vision-29c37",
+  storageBucket: "gallant-vision-29c37.firebasestorage.app",
+  messagingSenderId: "292457738",
+  appId: "1:292457738:web:05e7f7591d19fb11e5bef3"
+};
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+
+let isLogin = true;
+window.switchMode = (login) => {
+  isLogin = login;
+  document.getElementById('btnLogin').className = login ? 'active' : '';
+  document.getElementById('btnSignup').className = !login ? 'active' : '';
+  document.getElementById('authTitle').innerText = login ? 'Karibu Tena' : 'Tengeneza Akaunti';
+  document.getElementById('authBtn').innerText = login ? 'Login' : 'Create Account';
+  document.getElementById('nameInput').style.display = login ? 'none' : 'block';
+  document.getElementById('formSelect').style.display = login ? 'none' : 'block';
+};
+window.doAuth = async () => {
+  const email = document.getElementById('email').value;
+  const pass = document.getElementById('password').value;
+  const msg = document.getElementById('msg');
+  if(!email || !pass){ msg.innerText = 'Jaza email na password'; return; }
+  try{
+    if(isLogin) await signInWithEmailAndPassword(auth, email, pass);
+    else await createUserWithEmailAndPassword(auth, email, pass);
+    msg.innerText = '';
+  }catch(e){ msg.innerText = e.message; }
+};
+window.doLogout = () => signOut(auth);
+
+onAuthStateChanged(auth, (user) => {
+  if(user){
+    document.getElementById('authPage').style.display = 'none';
+    document.getElementById('dashPage').style.display = 'block';
+    document.getElementById('userEmail').innerText = user.email;
+    document.getElementById('avatarLetter').innerText = user.email[0].toUpperCase();
+    document.getElementById('welcomeText').innerText = 'Karibu Tena! 👋';
+  } else {
+    document.getElementById('authPage').style.display = 'block';
+    document.getElementById('dashPage').style.display = 'none';
+  }
+});
+</script>
 </body>
 </html>
